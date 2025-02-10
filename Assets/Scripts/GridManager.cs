@@ -50,6 +50,9 @@ public class GridManager : MonoBehaviour
         }
         if (highlightedTile != clickedTile && chessManager.MoveIsLegal(clickedTile, highlightedTile))
         {
+            //add notation
+            bool pieceTaken = endSquarePiece == '-' ? false : true;
+            chessManager.AddMoveToNotation(startSquare.squareName, endSquare.squareName, pieceTaken);
 
             endSquare.SetPiece(startSquare.pieceName);
             startSquare.SetPiece('-');
@@ -74,8 +77,6 @@ public class GridManager : MonoBehaviour
         }
         else
         {
-            bool pieceTaken = endSquarePiece == '-' ? false : true;
-            chessManager.AddMoveToNotation(startSquare.squareName, endSquare.squareName, pieceTaken);
         }
     }
     private void UndoMove(char _endSquarePiece)
@@ -95,6 +96,7 @@ public class GridManager : MonoBehaviour
         endSquare.SetPiece(_endSquarePiece);
         chessManager.SetAllLegalMoves();
         chessManager.isWhitesTurn = !chessManager.isWhitesTurn;
+        chessManager.notation.RemoveAt(chessManager.notation.Count - 1);
     }
     public void HighlightLegalMoveTiles(List<int> legalMoves)
     {

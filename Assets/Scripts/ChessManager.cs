@@ -258,22 +258,22 @@ public class ChessManager : MonoBehaviour
         bool ambiguousMove = false;
         foreach (var tile in tiles)
         {
-            if (tile.Value.pieceName == tiles[_endSquare].pieceName && tile.Value.piece.GetComponent<Piece>().legalMoves.Contains(_endSquare))
+            if (tile.Value.squareName != _startSquare && tile.Value.pieceName == tiles[_startSquare].pieceName && tile.Value.piece.GetComponent<Piece>().legalMoves.Contains(_endSquare))
             {
                 ambiguousMove = true;
             }
         }
 
         //piece name / pawn file
-        if (char.ToUpper(tiles[_endSquare].pieceName) != 'P'){notationToAdd += char.ToUpper(tiles[_endSquare].pieceName).ToString(); }
+        if (char.ToUpper(tiles[_startSquare].pieceName) != 'P'){notationToAdd += char.ToUpper(tiles[_startSquare].pieceName).ToString(); }
         else if (_pieceTaken) { notationToAdd += tiles[_startSquare].algebraicSquareName[0].ToString(); }
         //ambiguous move
-        if (ambiguousMove && char.ToUpper(tiles[_endSquare].pieceName) != 'P') { notationToAdd += tiles[_startSquare].algebraicSquareName[0].ToString(); }
+        if (ambiguousMove && char.ToUpper(tiles[_startSquare].pieceName) != 'P') { notationToAdd += tiles[_startSquare].algebraicSquareName[0].ToString(); }
         //piece taken
         if (_pieceTaken){notationToAdd += "x";}
         //end square
         notationToAdd += algebraicEndSquare;
-        //check
+        //check, FIX THIS, this is processed before the move, so can't see if the opponent is in check
 
         //add to list
         notation.Add(notationToAdd);
