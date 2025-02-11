@@ -6,6 +6,7 @@ using UnityEngine;
 public class ChessManager : MonoBehaviour
 {
     //private Process stockfishProcess;
+    public GameObject notationGrid;
 
     public string position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     public string currTurn = "w";
@@ -280,6 +281,11 @@ public class ChessManager : MonoBehaviour
 
 
         foreach (string move in notation) { Debug.Log(move); }  
+    }
+
+    public void AddCheckToNotation()
+    {
+        notation[notation.Count - 1] = notation[notation.Count - 1] + "+";
     }
     //set FEN
     //integrate stockfish

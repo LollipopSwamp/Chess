@@ -9,6 +9,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Transform camera;
     public GameObject chessManagerObj;
     private ChessManager chessManager;
+    public GameObject notationGrid;
     public int highlightedTile;
     public int clickedTile;
 
@@ -54,6 +55,7 @@ public class GridManager : MonoBehaviour
             bool pieceTaken = endSquarePiece == '-' ? false : true;
             chessManager.AddMoveToNotation(startSquare.squareName, endSquare.squareName, pieceTaken);
 
+            // move piece
             endSquare.SetPiece(startSquare.pieceName);
             startSquare.SetPiece('-');
             chessManager.SetAllLegalMoves();
@@ -70,14 +72,20 @@ public class GridManager : MonoBehaviour
             }
         }
         else { return; }
+        //if puts in check, undo move
         if (chessManager.IsInCheck(!chessManager.isWhitesTurn)) 
         {
             UndoMove(endSquarePiece);
             Debug.Log("You are in check after that move");
         }
-        else
+        else if (chessManager.IsInCheck(chessManager.isWhitesTurn))
         {
+            //if puts opponent in check, add + to notation
+            chessManager.AddCheckToNotation();
         }
+        chessManager.Update();
+        
+    public GameObject notationGrid;
     }
     private void UndoMove(char _endSquarePiece)
     {
