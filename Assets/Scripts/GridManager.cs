@@ -62,18 +62,18 @@ public class GridManager : MonoBehaviour
             chessManager.isWhitesTurn = !chessManager.isWhitesTurn;
             //Debug.Log("White in Check: " + chessManager.IsInCheck(true).ToString());
             //Debug.Log("Black in Check: " + chessManager.IsInCheck(false).ToString());
-            if(endSquare.pieceName == 'K')
+            if (endSquare.pieceName == 'K')
             {
                 chessManager.whiteKingLoc = endSquare.squareName;
             }
-            else if(endSquare.pieceName == 'k')
+            else if (endSquare.pieceName == 'k')
             {
                 chessManager.blackKingLoc = endSquare.squareName;
             }
         }
         else { return; }
         //if puts in check, undo move
-        if (chessManager.IsInCheck(!chessManager.isWhitesTurn)) 
+        if (chessManager.IsInCheck(!chessManager.isWhitesTurn))
         {
             UndoMove(endSquarePiece);
             Debug.Log("You are in check after that move");
@@ -82,10 +82,8 @@ public class GridManager : MonoBehaviour
         {
             //if puts opponent in check, add + to notation
             chessManager.AddCheckToNotation();
+            chessManager.UpdateNotationGrid();
         }
-        chessManager.Update();
-        
-    public GameObject notationGrid;
     }
     private void UndoMove(char _endSquarePiece)
     {

@@ -12,10 +12,10 @@ public class NotationMove : MonoBehaviour
 
     void Start()
     {
-        whiteMoveText.GetComponent<TextMeshProUGUI>().text = moveNumber.ToString();
+        moveNumberText.GetComponent<TextMeshProUGUI>().text = moveNumber.ToString();
         moveNumber++;
-        whiteMoveText.GetComponent<TextMeshProUGUI>().text = "";
-        blackMoveText.GetComponent<TextMeshProUGUI>().text = "";
+        //whiteMoveText.GetComponent<TextMeshProUGUI>().text = "";
+        //blackMoveText.GetComponent<TextMeshProUGUI>().text = "";
     }
 
     public void SetWhiteMove(string _move)

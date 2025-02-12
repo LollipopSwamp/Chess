@@ -287,6 +287,20 @@ public class ChessManager : MonoBehaviour
     {
         notation[notation.Count - 1] = notation[notation.Count - 1] + "+";
     }
+    public void UpdateNotationGrid()
+    {
+        Debug.Log(notation.Count);
+        Debug.Log(notation.Count % 2);
+        //odd count notation, newest move is white
+        if (notation.Count % 2 == 1)
+        {
+            notationGrid.GetComponent<NotationGrid>().AddWhiteMove(notation[notation.Count - 1]);
+        }
+        else
+        {
+            notationGrid.GetComponent<NotationGrid>().AddBlackMove(notation[notation.Count - 1]);
+        }
+    }
     //set FEN
     //integrate stockfish
 
