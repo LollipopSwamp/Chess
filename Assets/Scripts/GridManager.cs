@@ -42,65 +42,102 @@ public class GridManager : MonoBehaviour
     {
         Tile startSquare = chessManager.tiles[clickedTile];
         Tile endSquare = chessManager.tiles[highlightedTile];
-        char endSquarePiece = endSquare.pieceName;
-        int currTurn = chessManager.isWhitesTurn ? 0 : 1;
-        if (currTurn != startSquare.piece.GetComponent<Piece>().color)
+        char endSquarePiece = endSquare.piece.name;
+
+        //check if its your turn
+        if (chessManager.isWhitesTurn != startSquare.piece.isWhite)
         {
             Debug.Log("Not your turn!");
             return;
         }
+
+        //released on different square than clicked, move is legal
         if (highlightedTile != clickedTile && chessManager.MoveIsLegal(clickedTile, highlightedTile))
         {
-            //add notation
-            bool pieceTaken = endSquarePiece == '-' ? false : true;
-            chessManager.AddMoveToNotation(startSquare.squareName, endSquare.squareName, pieceTaken);
+            //check if move is ambiguous (before moving piece)
+            bool ambiguousMove = false;
+            foreach (var tile in chessManager.tiles)
+            {
+                //skip startSquare, same piece type, and has same legal move
+                if (tile.Value.squareName != startSquare.squareName && tile.Value.piece.name == startSquare.piece.name && tile.Value.piece.legalMoves.Contains(endSquare.squareName))
+                {
+                    ambiguousMove = true;
+                    break;
+                }
+            }
 
-            // move piece
-            endSquare.SetPiece(startSquare.pieceName);
+            // move piece, update tiles dict, mark piece taken
+            bool pieceTaken = endSquarePiece == '-' ? false : true;
+            endSquare.SetPiece(startSquare.piece.name);
             startSquare.SetPiece('-');
-            chessManager.SetAllLegalMoves();
-            chessManager.isWhitesTurn = !chessManager.isWhitesTurn;
-            //Debug.Log("White in Check: " + chessManager.IsInCheck(true).ToString());
-            //Debug.Log("Black in Check: " + chessManager.IsInCheck(false).ToString());
-            if (endSquare.pieceName == 'K')
+            chessManager.tiles = chessManager.SetAllLegalMoves(chessManager.tiles);
+
+            //update kingLoc's
+            if (endSquare.piece.name == 'K')
             {
                 chessManager.whiteKingLoc = endSquare.squareName;
             }
-            else if (endSquare.pieceName == 'k')
+            else if (endSquare.piece.name == 'k')
             {
                 chessManager.blackKingLoc = endSquare.squareName;
             }
-        }
-        else { return; }
-        //if puts in check, undo move
-        if (chessManager.IsInCheck(!chessManager.isWhitesTurn))
-        {
-            UndoMove(endSquarePiece);
-            Debug.Log("You are in check after that move");
-        }
-        else if (chessManager.IsInCheck(chessManager.isWhitesTurn))
-        {
-            //if puts opponent in check, add + to notation
-            chessManager.AddCheckToNotation();
+
+            //if in check after, undo, else continue
+            if (chessManager.IsInCheck(chessManager.isWhitesTurn))
+            {
+                Debug.Log("Move illegal, puts you in check!");
+                startSquare.SetPiece(endSquare.piece.name);
+                endSquare.SetPiece(endSquarePiece);
+                chessManager.tiles = chessManager.SetAllLegalMoves(chessManager.tiles);
+                return;
+            }
+
+
+
+            //add notation
+            chessManager.AddMoveToNotation(startSquare.squareName, endSquare.squareName, pieceTaken, ambiguousMove);
+
+            if (chessManager.IsInCheck(!chessManager.isWhitesTurn))
+            {
+                //check for mate
+                if (chessManager.IsCheckmate())
+                {
+                    chessManager.AddToNotation("#");
+                }
+                //else add '+' to notation
+                else
+                {
+                    chessManager.AddToNotation("+");
+                }
+            }
+
+            //update notation and currTurn
+            chessManager.isWhitesTurn = !chessManager.isWhitesTurn;
             chessManager.UpdateNotationGrid();
         }
+        else 
+        {
+            Debug.Log("Move illegal");
+            return; 
+        }
+        chessManager.PrintCurrentFENPosition();
     }
     private void UndoMove(char _endSquarePiece)
     {
         Tile startSquare = chessManager.tiles[clickedTile];
         Tile endSquare = chessManager.tiles[highlightedTile];
 
-        if (endSquare.pieceName == 'K')
+        if (endSquare.piece.name == 'K')
         {
             chessManager.whiteKingLoc = startSquare.squareName;
         }
-        else if (endSquare.pieceName == 'k')
+        else if (endSquare.piece.name == 'k')
         {
             chessManager.blackKingLoc = startSquare.squareName;
         }
-        startSquare.SetPiece(endSquare.pieceName);
+        startSquare.SetPiece(endSquare.piece.name);
         endSquare.SetPiece(_endSquarePiece);
-        chessManager.SetAllLegalMoves();
+        //chessManager.SetAllLegalMoves();
         chessManager.isWhitesTurn = !chessManager.isWhitesTurn;
         chessManager.notation.RemoveAt(chessManager.notation.Count - 1);
     }

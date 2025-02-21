@@ -5,32 +5,43 @@ using UnityEngine;
 
 public class ChessManager : MonoBehaviour
 {
-    //private Process stockfishProcess;
-    public GameObject notationGrid;
+    //gameobjects
+    //public GameObject gridManagerObj;
+    //public GridManager gridManager;
 
+    //FEN variables
     public string position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     public string currTurn = "w";
     public string castlingRights = "KQkq";
     public string enPassant = "-";
     public int fiftyMoveRule = 0;
     public int moves = 0;
+
+    //tiles variables
     public Dictionary<int, Tile> tiles = new Dictionary<int, Tile>();
+    public Dictionary<int, Tile> tilesAfterMove = new Dictionary<int, Tile>();
     public string FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 2";
     private string allPieceChars = "rnbqkpRNBQKP";
 
+    //game variables
     public int whiteKingLoc;
     public int blackKingLoc;
-
     public bool isWhitesTurn;
 
+    //notation
+    public GameObject notationGrid;
     public List<string> notation = new List<string>();
 
+    void Start()
+    {
+        //gridManager = gridManagerObj.GetComponent<GridManager>();
+    }
 
     public void ResetGame()
     {
         foreach (var tile in tiles.Values)
         {
-            tile.pieceName = '-';
+            tile.piece.name = '-';
             tile.SetPiece('-');
         }
         position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
@@ -41,10 +52,11 @@ public class ChessManager : MonoBehaviour
         //FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 2";
         //Debug.Log(position);
         SetPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-        SetAllLegalMoves();
+        SetAllLegalMoves(tiles);
         //Debug.Log("White in Check: " + IsInCheck(true).ToString());
         //Debug.Log("Black in Check: " + IsInCheck(false).ToString());
         isWhitesTurn = true;
+        PositionToFENPostion(tiles);
     }
     public void SetPosition(string _position)
     {
@@ -75,59 +87,113 @@ public class ChessManager : MonoBehaviour
 
         return column*10 + row;
     }
-    public bool MoveIsLegal(int startSquare, int endSquare)
+    public void SetTilesAfterMove(int startSquare, int endSquare)
     {
-        //Debug.Log("Checking Legal Move: " + startSquare.ToString() + ", " + endSquare.ToString());
-
+        Debug.Log("SetTilesAfterMove");
+        //create board after move
+        //tilesAfterMove = new Dictionary<int, Tile>();
+        tilesAfterMove = new Dictionary<int, Tile>();
+        foreach(var tile in tiles)
+        {
+            Tile newTile = new Tile(tile.Value.squareName);
+            newTile.piece = new Piece(tile.Value.piece.name, tile.Value.squareName);
+            tilesAfterMove.Add(tile.Key,  newTile);
+        }
+        //Debug.Log(tiles[startSquare].piece.name);
+        tilesAfterMove[endSquare].piece.name = tilesAfterMove[startSquare].piece.name;
+        tilesAfterMove[startSquare].piece.name = '-';
+        //Debug.Log(tiles[startSquare].piece.name);
+        tilesAfterMove = SetAllLegalMoves(tilesAfterMove);
+        tilesAfterMove[61].piece.PrintPiece();
+        Debug.Log(PositionToFENPostion(tilesAfterMove));
+    }
+    public bool MoveIsLegal(int _startSquareName, int _endSquareName)
+    {
+        Tile startSquare = tiles[_startSquareName].GetComponent<Tile>();
+        Tile endSquare = tiles[_endSquareName].GetComponent<Tile>();
         //check if own piece is on square
-        //Debug.Log(tiles[startSquare].GetComponent<Tile>().piece.GetComponent<Piece>().color);
-        //Debug.Log(tiles[endSquare].GetComponent<Tile>().piece.GetComponent<Piece>().color);
-        if (tiles[startSquare].GetComponent<Tile>().piece.GetComponent<Piece>().color == tiles[endSquare].GetComponent<Tile>().piece.GetComponent<Piece>().color) { return false; }
+        //Debug.Log("startSquare");
+        //startSquare.piece.PrintPiece();
+        //Debug.Log("endSquare: " + _endSquareName.ToString());
+        //endSquare.piece.PrintPiece();
+        if (startSquare.piece.isWhite == endSquare.piece.isWhite && endSquare.piece.name != '-') { return false; }
 
         //check piece type legality
-        char pieceType = char.ToLower(tiles[startSquare].pieceName);
+        char pieceType = char.ToLower(startSquare.piece.name);
+        bool legal = false;
         switch (pieceType)
         {
             case 'p':
-                if (PawnMovement(startSquare, endSquare)) { return true; }
+                if (PawnMovement(_startSquareName, _endSquareName)) { legal = true; }
                 break;
             case 'b':
-                if (!SquareBlocked(startSquare, endSquare) && IsDiagonal(startSquare, endSquare)) { return true; }
+                if (!SquareBlocked(_startSquareName, _endSquareName) && IsDiagonal(_startSquareName, _endSquareName)) { legal = true; }
                 break;
             case 'n':
-                if (KnightMovement(startSquare, endSquare)) { return true; }
+                if (KnightMovement(_startSquareName, _endSquareName)) { legal = true; }
                 break;
             case 'r':
-                if (!SquareBlocked(startSquare, endSquare) && IsLateral(startSquare, endSquare)) { return true; }
+                if (!SquareBlocked(_startSquareName, _endSquareName) && IsLateral(_startSquareName, _endSquareName)) { legal = true; }
                 break;
             case 'k':
-                if (KingMovement(startSquare, endSquare)) { return true; }
+                if (KingMovement(_startSquareName, _endSquareName)) { legal = true; }
                 break;
             case 'q':
-                if (!SquareBlocked(startSquare, endSquare) && (IsLateral(startSquare, endSquare) || IsDiagonal(startSquare, endSquare))) { return true; }
+                if (!SquareBlocked(_startSquareName, _endSquareName) && (IsLateral(_startSquareName, _endSquareName) || IsDiagonal(_startSquareName, _endSquareName))) { legal = true; }
                 break;
+        }
+        //Debug.Log(legal);
+        //Debug.Log(pieceType);
+        //Debug.Log(startSquare);
+        //Debug.Log(endSquare);
+        return legal;
+    }
+    public bool IsInCheckAfterMove(bool isWhite)
+    {
+        Debug.Log("IsInCheckAfterMove");
+        //check all tiles
+        foreach (var tile in tilesAfterMove)
+        {
+            Piece piece = tile.Value.piece;
+            //if empty square
+            if (tile.Value.piece.name == '-') { continue; }
+            //if checking white, piece is opposite color, and piece contains kingLoc in legal moves
+            else if (isWhite && piece.isWhite != isWhite && piece.legalMoves.Contains(whiteKingLoc))
+            {
+                Debug.Log(tile.Value.squareName);
+                Debug.Log(true);
+                return true;
+            }
+            //if checking black, piece is opposite color, and piece contains kingLoc in legal moves
+            else if (!isWhite && piece.isWhite != isWhite && piece.legalMoves.Contains(blackKingLoc))
+            {
+                Debug.Log(tile.Value.squareName);
+                Debug.Log(true);
+                return true;
+            }
         }
         return false;
     }
     private bool PawnMovement(int startSquare, int endSquare)
     {
-        if (tiles[startSquare].GetComponent<Tile>().piece.GetComponent<Piece>().color == 0)
+        if (tiles[startSquare].GetComponent<Tile>().piece.isWhite)
         {
             //normal movement
-            if (endSquare - startSquare == 1 && tiles[endSquare].GetComponent<Tile>().pieceName == '-') { return true; }
-            else if (startSquare % 10 == 2 && endSquare - startSquare == 2){ return true; }
+            if (endSquare - startSquare == 1 && tiles[endSquare].GetComponent<Tile>().piece.name == '-') { return true; }
+            //2 moves forward
+            else if (startSquare % 10 == 2 && endSquare - startSquare == 2 && tiles[endSquare].GetComponent<Tile>().piece.name == '-') { return true; }
             //take piece
-            else if ((Mathf.Abs(endSquare - startSquare) == 11 | Mathf.Abs(startSquare - endSquare) == 9) && tiles[endSquare].pieceName != '-' && tiles[endSquare].piece.GetComponent<Piece>().color == 1) { return true; }
+            else if ((Mathf.Abs(endSquare - startSquare) == 11 | Mathf.Abs(startSquare - endSquare) == 9) && tiles[endSquare].piece.name != '-' && !tiles[endSquare].piece.isWhite) { return true; }
         }
         else //isBlack
         {
             //normal movement
-            if (endSquare - startSquare == -1 && tiles[endSquare].GetComponent<Tile>().pieceName == '-') { return true; }
-            else if (startSquare % 10 == 7 && endSquare - startSquare == -2) { return true; }
+            if (endSquare - startSquare == -1 && tiles[endSquare].GetComponent<Tile>().piece.name == '-') { return true; }
+            //2 moves forward
+            else if (startSquare % 10 == 7 && endSquare - startSquare == -2 && tiles[endSquare].GetComponent<Tile>().piece.name == '-') { return true; }
             //take piece
-            else if ((Mathf.Abs(startSquare - endSquare) == 11 | Mathf.Abs(endSquare - startSquare) == 9) && tiles[endSquare].pieceName != '-' && tiles[endSquare].piece.GetComponent<Piece>().color == 0) { return true; }
+            else if ((Mathf.Abs(startSquare - endSquare) == 11 | Mathf.Abs(endSquare - startSquare) == 9) && tiles[endSquare].piece.name != '-' && tiles[endSquare].piece.isWhite) { return true; }
         }
-
         return false;
     }
     private bool IsDiagonal(int startSquare, int endSquare)
@@ -157,7 +223,7 @@ public class ChessManager : MonoBehaviour
         while (squareToCheck != endSquare)
         {
             //Debug.Log("Checking if " + squareToCheck.ToString() + " is blocked");
-            if (tiles[squareToCheck].GetComponent<Tile>().pieceName != '-') { return false; }
+            if (tiles[squareToCheck].GetComponent<Tile>().piece.name != '-') { return false; }
             squareToCheck += squareBlockDiff * positiveNegative;
         }
         return legal;
@@ -187,7 +253,7 @@ public class ChessManager : MonoBehaviour
         while (squareToCheck != endSquare)
         {
             //Debug.Log("Checking if " + squareToCheck.ToString() + " is blocked (11)");
-            if (tiles[squareToCheck].GetComponent<Tile>().pieceName != '-') { return false; }
+            if (tiles[squareToCheck].GetComponent<Tile>().piece.name != '-') { return false; }
             squareToCheck += squareBlockDiff * positiveNegative;
         }
         return legal;
@@ -214,14 +280,14 @@ public class ChessManager : MonoBehaviour
         //Debug.Log("blackKingLoc:" + blackKingLoc.ToString());
         foreach (var tile in tiles)
         {
-            Piece piece = tile.Value.piece.GetComponent<Piece>();
-            if (tile.Value.pieceName == '-') { continue; }
-            else if (isWhite && piece.color != color && piece.legalMoves.Contains(whiteKingLoc))
+            Piece piece = tile.Value.piece;
+            if (tile.Value.piece.name == '-') { continue; }
+            else if (isWhite && piece.isWhite != isWhite && piece.legalMoves.Contains(whiteKingLoc))
             {
                 //Debug.Log("White in check from " + tile.Value.squareName.ToString());
                 return true;
             }
-            else if (!isWhite && piece.color != color && piece.legalMoves.Contains(blackKingLoc))
+            else if (!isWhite && piece.isWhite != isWhite && piece.legalMoves.Contains(blackKingLoc))
             {
                 //Debug.Log("Black in check from " + tile.Value.squareName.ToString());
                 return true;
@@ -229,68 +295,111 @@ public class ChessManager : MonoBehaviour
         }
         return false;
     }
-    public void SetAllLegalMoves()
+    public Dictionary<int, Tile> SetAllLegalMoves(Dictionary<int, Tile> _tiles)
     {
-        foreach (var startSquare in tiles)
+        foreach (var startSquare in _tiles)
         {
-            startSquare.Value.piece.GetComponent<Piece>().legalMoves = new List<int>();
-            if(startSquare.Value.pieceName != '-')
+            //startSquare.Value.PrintTile();
+            startSquare.Value.piece.legalMoves = new List<int>();
+            if(startSquare.Value.piece.name != '-')
             {
-                foreach(KeyValuePair<int, Tile> endSquare in tiles)
+                foreach(KeyValuePair<int, Tile> endSquare in _tiles)
                 {
                     //Debug.Log("Checking Legal Move: " + startSquare.Value.squareName.ToString() + " " + endSquare.Value.squareName.ToString());
                     if (MoveIsLegal(startSquare.Value.squareName, endSquare.Value.squareName))
                     {
                         //Debug.Log("Legal move");
-                        startSquare.Value.piece.GetComponent<Piece>().legalMoves.Add(endSquare.Value.squareName);
+                        startSquare.Value.piece.legalMoves.Add(endSquare.Value.squareName);
                     }
                     //else { Debug.Log("Illegal Move: " + startSquare.Value.squareName.ToString() + " " + endSquare.Value.squareName.ToString()); }
                 }
             }
         }
+        return _tiles;
     }
-    public void AddMoveToNotation(int _startSquare, int _endSquare, bool _pieceTaken)
+
+    public bool IsCheckmate() //checked before currTurn is updated, but after piece is moved
+    {
+        bool checkmate = true;
+        //move each pieces legal move, then check if in check
+        int currKingLoc = !isWhitesTurn ? whiteKingLoc : blackKingLoc;
+        foreach(var tile in tiles)
+        {
+            //if tile is not empty and piece color matches, check moves
+            Piece piece = tile.Value.piece;
+            if(piece.name != '-' && piece.isWhite != isWhitesTurn)
+            {
+                foreach(int legalMove in piece.legalMoves)
+                {
+                    //prep undo move
+                    char endSquarePiece = tiles[legalMove].piece.name;
+
+                    //make move
+                    tiles[legalMove].SetPiece(piece.name);
+                    tile.Value.SetPiece('-');
+                    tiles = SetAllLegalMoves(tiles);
+                    //update kingLoc's
+                    if (piece.name == 'K')
+                    {
+                        whiteKingLoc = legalMove;
+                    }
+                    else if (piece.name == 'k')
+                    {
+                        blackKingLoc = legalMove;
+                    }
+
+                    //if move removes check
+                    if (!IsInCheck(!isWhitesTurn))
+                    {
+                        Debug.Log(tile.Value.squareName.ToString() + " to " + legalMove.ToString() + " removes check. Not checkmate.");
+                        checkmate = false;
+                    }
+                    //undo move
+                    tile.Value.SetPiece(tiles[legalMove].piece.name);
+                    tiles[legalMove].SetPiece(endSquarePiece);
+                    tiles = SetAllLegalMoves(tiles);
+
+                    //break if checkmate
+                    if (!checkmate) { return checkmate; }
+                }
+            }
+        }
+        Debug.Log("Checkmate!!");
+        return checkmate;
+    }
+    public void GameEnded(bool _whiteIsWinner)
+    {
+
+    }
+
+    public void AddMoveToNotation(int _startSquare, int _endSquare, bool _pieceTaken, bool _ambiguousMove) //processed after move
     {
         string algebraicStartSquare = tiles[_startSquare].algebraicSquareName;
         string algebraicEndSquare = tiles[_endSquare].algebraicSquareName;
         string notationToAdd = "";
 
-        //check if ambiguous move
-        bool ambiguousMove = false;
-        foreach (var tile in tiles)
-        {
-            if (tile.Value.squareName != _startSquare && tile.Value.pieceName == tiles[_startSquare].pieceName && tile.Value.piece.GetComponent<Piece>().legalMoves.Contains(_endSquare))
-            {
-                ambiguousMove = true;
-            }
-        }
-
         //piece name / pawn file
-        if (char.ToUpper(tiles[_startSquare].pieceName) != 'P'){notationToAdd += char.ToUpper(tiles[_startSquare].pieceName).ToString(); }
+        if (char.ToUpper(tiles[_endSquare].piece.name) != 'P'){notationToAdd += char.ToUpper(tiles[_endSquare].piece.name).ToString(); }
         else if (_pieceTaken) { notationToAdd += tiles[_startSquare].algebraicSquareName[0].ToString(); }
         //ambiguous move
-        if (ambiguousMove && char.ToUpper(tiles[_startSquare].pieceName) != 'P') { notationToAdd += tiles[_startSquare].algebraicSquareName[0].ToString(); }
+        if (_ambiguousMove && char.ToUpper(tiles[_endSquare].piece.name) != 'P') { notationToAdd += tiles[_startSquare].algebraicSquareName[0].ToString(); }
         //piece taken
         if (_pieceTaken){notationToAdd += "x";}
         //end square
         notationToAdd += algebraicEndSquare;
-        //check, FIX THIS, this is processed before the move, so can't see if the opponent is in check
 
         //add to list
         notation.Add(notationToAdd);
-
-
-        foreach (string move in notation) { Debug.Log(move); }  
     }
 
-    public void AddCheckToNotation()
+    public void AddToNotation(string _checkChar)
     {
-        notation[notation.Count - 1] = notation[notation.Count - 1] + "+";
+        notation[notation.Count - 1] = notation[notation.Count - 1] + _checkChar;
     }
     public void UpdateNotationGrid()
     {
-        Debug.Log(notation.Count);
-        Debug.Log(notation.Count % 2);
+        //Debug.Log(notation.Count);
+        //Debug.Log(notation.Count % 2);
         //odd count notation, newest move is white
         if (notation.Count % 2 == 1)
         {
@@ -303,5 +412,47 @@ public class ChessManager : MonoBehaviour
     }
     //set FEN
     //integrate stockfish
-
+    public void PrintCurrentFENPosition()
+    {
+        Debug.Log("Current position FEN");
+        Debug.Log(PositionToFENPostion(tiles));
+    }
+    public string PositionToFENPostion(Dictionary <int, Tile> _tiles)
+    {
+        int emptySquares = 0;
+        string positionFEN = "";
+        //i is row, j is column
+        for (int i = 8; i > 0; i--)
+        {
+            for (int j = 1; j < 9; j++)
+            {
+                int squareNum = (j * 10) + i;
+                if (_tiles[squareNum].piece.name == '-')
+                {
+                    emptySquares++;
+                    if(j == 8)
+                    {
+                        positionFEN += emptySquares.ToString();
+                        emptySquares = 0;
+                    }
+                }
+                else if(emptySquares > 0)
+                {
+                    positionFEN += emptySquares.ToString();
+                    positionFEN += _tiles[squareNum].piece.name;
+                    emptySquares = 0;
+                }
+                else
+                {
+                    positionFEN += _tiles[squareNum].piece.name;
+                }
+            }
+            if (i > 1)
+            {
+                positionFEN += "/";
+            }
+            emptySquares = 0;
+        }
+        return positionFEN;
+    }
 }
