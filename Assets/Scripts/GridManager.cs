@@ -27,6 +27,7 @@ public class GridManager : MonoBehaviour
             {
                 var spawnedTile = Instantiate(tilePrefab, new Vector3(x, y), Quaternion.identity, this.transform);
                 string tileName  = (x+1).ToString() + (y+1).ToString();
+                bool useAlgebraicTileNames = true;
                 spawnedTile.name = tileName;
                 var isOffset = (x % 2 == 0) && (y % 2 != 0) || (x % 2 != 0) && (y % 2 == 0);
                 Vector3 tileNamePos = camera.transform.InverseTransformDirection(spawnedTile.transform.position - cameraPosition);
@@ -43,6 +44,11 @@ public class GridManager : MonoBehaviour
         Tile startSquare = chessManager.tiles[clickedTile];
         Tile endSquare = chessManager.tiles[highlightedTile];
         char endSquarePiece = endSquare.piece.name;
+
+        Debug.Log("tiles[endSquare].algebraicSquareName " + endSquare.algebraicSquareName.ToString());
+        Debug.Log("currFEN.enPassant " + chessManager.currFEN.enPassant.ToString());
+        //update tempFEN to previous move FEN
+        chessManager.tempFEN = chessManager.currFEN;
 
         //check if its your turn
         if (chessManager.isWhitesTurn != startSquare.piece.isWhite)
@@ -66,36 +72,93 @@ public class GridManager : MonoBehaviour
                 }
             }
 
-            // move piece, update tiles dict, mark piece taken
+            //mark piece taken, update tempFEN fiftyMoveRule
             bool pieceTaken = endSquarePiece == '-' ? false : true;
+            if (pieceTaken | startSquare.piece.name == 'P' | startSquare.piece.name == 'p')
+            {
+                chessManager.tempFEN.fiftyMoveRule = 0;
+            }
+            else
+            {
+                Debug.Log("chessManager.tempFEN.fiftyMoveRule += 1");
+                chessManager.tempFEN.fiftyMoveRule += 1;
+            }
+            //move piece
             endSquare.SetPiece(startSquare.piece.name);
             startSquare.SetPiece('-');
-            chessManager.tiles = chessManager.SetAllLegalMoves(chessManager.tiles);
 
             //update kingLoc's
             if (endSquare.piece.name == 'K')
             {
                 chessManager.whiteKingLoc = endSquare.squareName;
+                chessManager.tempFEN.whiteKingsideCastling = false;
+                chessManager.tempFEN.whiteQueensideCastling = false;
             }
             else if (endSquare.piece.name == 'k')
             {
                 chessManager.blackKingLoc = endSquare.squareName;
+                chessManager.tempFEN.blackKingsideCastling = false;
+                chessManager.tempFEN.blackQueensideCastling = false;
             }
 
             //if in check after, undo, else continue
+            chessManager.tiles = chessManager.SetAllLegalMoves(chessManager.tiles);
             if (chessManager.IsInCheck(chessManager.isWhitesTurn))
             {
                 Debug.Log("Move illegal, puts you in check!");
                 startSquare.SetPiece(endSquare.piece.name);
                 endSquare.SetPiece(endSquarePiece);
+                chessManager.tempFEN = chessManager.currFEN;
                 chessManager.tiles = chessManager.SetAllLegalMoves(chessManager.tiles);
                 return;
             }
 
+            //castling
+            int castleType = 0; // 1 is kingside, 2 is queenside
+            if (endSquare.piece.name == 'K')
+            {
+                //castle kingside
+                if (endSquare.squareName == 71)
+                {
+                    chessManager.tiles[81].SetPiece('-');
+                    chessManager.tiles[61].SetPiece('R');
+                    castleType = 1;
+                }
+                //castle queenside
+                if (endSquare.squareName == 31)
+                {
+                    chessManager.tiles[11].SetPiece('-');
+                    chessManager.tiles[41].SetPiece('R');
+                    castleType = 2;
+                }
+            }
+            else if (endSquare.piece.name == 'k')
+            {
+                chessManager.blackKingLoc = endSquare.squareName;
+                chessManager.tempFEN.blackKingsideCastling = false;
+                chessManager.tempFEN.blackQueensideCastling = false;
+                //castle kingside
+                if (endSquare.squareName == 78)
+                {
+                    chessManager.tiles[88].SetPiece('-');
+                    chessManager.tiles[68].SetPiece('r');
+                    castleType = 1;
+                }
+                //castle queenside
+                if (endSquare.squareName == 38)
+                {
+                    chessManager.tiles[18].SetPiece('-');
+                    chessManager.tiles[48].SetPiece('r');
+                    castleType = 2;
+                }
+            }
+
+            //check enPassant
+            chessManager.tempFEN.enPassant = GetEnPassant(startSquare, endSquare);
 
 
             //add notation
-            chessManager.AddMoveToNotation(startSquare.squareName, endSquare.squareName, pieceTaken, ambiguousMove);
+            chessManager.AddMoveToNotation(startSquare.squareName, endSquare.squareName, pieceTaken, ambiguousMove, castleType);
 
             if (chessManager.IsInCheck(!chessManager.isWhitesTurn))
             {
@@ -111,16 +174,49 @@ public class GridManager : MonoBehaviour
                 }
             }
 
-            //update notation and currTurn
+            //update notation, legal moves and currTurn
+            //chessManager.tiles = chessManager.SetAllLegalMoves(chessManager.tiles);
+
             chessManager.isWhitesTurn = !chessManager.isWhitesTurn;
             chessManager.UpdateNotationGrid();
         }
         else 
         {
             Debug.Log("Move illegal");
-            return; 
+            return;
         }
+        chessManager.tiles = chessManager.SetAllLegalMoves(chessManager.tiles);
+        chessManager.currFEN = chessManager.tempFEN;
         chessManager.PrintCurrentFENPosition();
+    }
+    private string GetEnPassant(Tile startSquare, Tile endSquare) //processed after move
+    {
+        //Debug.Log(startSquare.squareName);
+        //Debug.Log(endSquare.squareName);
+        string enPassant = "-";
+        //not pawn movement
+        if (endSquare.piece.name != 'P' &&  endSquare.piece.name != 'p') { return "-"; }
+
+        //white
+        if (endSquare.piece.isWhite)
+        {
+            //2 moves forward
+            if (startSquare.squareName % 10 == 2 && endSquare.squareName - startSquare.squareName == 2)
+            {
+                int enPassantSquare = endSquare.squareName - 1;
+                return chessManager.tiles[enPassantSquare].algebraicSquareName;
+            }
+        }
+        else //isBlack
+        {
+            //2 moves forward
+            if (startSquare.squareName % 10 == 7 && endSquare.squareName - startSquare.squareName == -2)
+            {
+                int enPassantSquare = endSquare.squareName + 1;
+                return chessManager.tiles[enPassantSquare].algebraicSquareName;
+            }
+        }
+        return enPassant;
     }
     private void UndoMove(char _endSquarePiece)
     {

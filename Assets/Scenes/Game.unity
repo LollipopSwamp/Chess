@@ -583,7 +583,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a863693c0ae99cd489e0d5173b13e248, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  notationGrid: {fileID: 1122721606}
   position: 1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1
   currTurn: w
   castlingRights: KQkq
@@ -594,6 +593,7 @@ MonoBehaviour:
   whiteKingLoc: 0
   blackKingLoc: 0
   isWhitesTurn: 0
+  notationGrid: {fileID: 1122721606}
   notation: []
 --- !u!1 &688649425
 GameObject:

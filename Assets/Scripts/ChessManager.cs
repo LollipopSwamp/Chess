@@ -16,6 +16,9 @@ public class ChessManager : MonoBehaviour
     public string enPassant = "-";
     public int fiftyMoveRule = 0;
     public int moves = 0;
+    public FEN currFEN = new FEN();
+    public FEN tempFEN = new FEN();
+    public Dictionary<int, FEN> boardStates = new Dictionary<int, FEN>();
 
     //tiles variables
     public Dictionary<int, Tile> tiles = new Dictionary<int, Tile>();
@@ -56,7 +59,7 @@ public class ChessManager : MonoBehaviour
         //Debug.Log("White in Check: " + IsInCheck(true).ToString());
         //Debug.Log("Black in Check: " + IsInCheck(false).ToString());
         isWhitesTurn = true;
-        PositionToFENPostion(tiles);
+        FEN startFEN = new FEN();
     }
     public void SetPosition(string _position)
     {
@@ -142,10 +145,7 @@ public class ChessManager : MonoBehaviour
                 if (!SquareBlocked(_startSquareName, _endSquareName) && (IsLateral(_startSquareName, _endSquareName) || IsDiagonal(_startSquareName, _endSquareName))) { legal = true; }
                 break;
         }
-        //Debug.Log(legal);
-        //Debug.Log(pieceType);
-        //Debug.Log(startSquare);
-        //Debug.Log(endSquare);
+
         return legal;
     }
     public bool IsInCheckAfterMove(bool isWhite)
@@ -181,18 +181,33 @@ public class ChessManager : MonoBehaviour
             //normal movement
             if (endSquare - startSquare == 1 && tiles[endSquare].GetComponent<Tile>().piece.name == '-') { return true; }
             //2 moves forward
-            else if (startSquare % 10 == 2 && endSquare - startSquare == 2 && tiles[endSquare].GetComponent<Tile>().piece.name == '-') { return true; }
+            else if (startSquare % 10 == 2 && endSquare - startSquare == 2 && tiles[endSquare].GetComponent<Tile>().piece.name == '-') {
+                //tempFEN.enPassant = tiles[endSquare].algebraicSquareName - 1;
+                return true; 
+            }
             //take piece
-            else if ((Mathf.Abs(endSquare - startSquare) == 11 | Mathf.Abs(startSquare - endSquare) == 9) && tiles[endSquare].piece.name != '-' && !tiles[endSquare].piece.isWhite) { return true; }
+            else if ((endSquare - startSquare == 11 | startSquare - endSquare == 9) 
+                && ((tiles[endSquare].piece.name != '-' && !tiles[endSquare].piece.isWhite) | (tiles[endSquare].algebraicSquareName == currFEN.enPassant && endSquare % 10 == 6)))
+            {
+                return true; 
+            }
         }
         else //isBlack
         {
             //normal movement
             if (endSquare - startSquare == -1 && tiles[endSquare].GetComponent<Tile>().piece.name == '-') { return true; }
             //2 moves forward
-            else if (startSquare % 10 == 7 && endSquare - startSquare == -2 && tiles[endSquare].GetComponent<Tile>().piece.name == '-') { return true; }
+            else if (startSquare % 10 == 7 && endSquare - startSquare == -2 && tiles[endSquare].GetComponent<Tile>().piece.name == '-') 
+            { 
+                //tempFEN.enPassant = tiles[endSquare].algebraicSquareName + 1;
+                return true;
+            }
             //take piece
-            else if ((Mathf.Abs(startSquare - endSquare) == 11 | Mathf.Abs(endSquare - startSquare) == 9) && tiles[endSquare].piece.name != '-' && tiles[endSquare].piece.isWhite) { return true; }
+            else if ((startSquare - endSquare == 11 | endSquare - startSquare == 9) 
+                && ((tiles[endSquare].piece.name != '-' && tiles[endSquare].piece.isWhite) | (tiles[endSquare].algebraicSquareName == currFEN.enPassant && endSquare % 10 == 3 )))
+            {
+                return true;
+            }
         }
         return false;
     }
@@ -265,7 +280,43 @@ public class ChessManager : MonoBehaviour
     }
     private bool KingMovement(int startSquare, int endSquare)
     {
+        //normal movement
         if ((9 <= Mathf.Abs(startSquare - endSquare) && Mathf.Abs(startSquare - endSquare) <= 11) | Mathf.Abs(startSquare - endSquare) == 1) { return true; }
+        //castling white kingside
+        if (startSquare == 51 && endSquare == 71 && currFEN.whiteKingsideCastling && tiles[61].piece.name == '-' && tiles[71].piece.name == '-' && !CastleThroughCheck(61,true))
+        {
+            return true;
+        }
+        //castling white queenside
+        if (startSquare == 51 && endSquare == 31 && currFEN.whiteQueensideCastling && tiles[41].piece.name == '-' && tiles[31].piece.name == '-' && tiles[21].piece.name == '-' && !CastleThroughCheck(41, true))
+        {
+            return true;
+        }
+        //castling white kingside
+        if (startSquare == 58 && endSquare == 78 && currFEN.blackKingsideCastling && tiles[68].piece.name == '-' && tiles[78].piece.name == '-' && !CastleThroughCheck(68, false))
+        {
+            return true;
+        }
+        //castling white kingside
+        if (startSquare == 58 && endSquare == 38 && currFEN.blackQueensideCastling && tiles[48].piece.name == '-' && tiles[38].piece.name == '-' && tiles[28].piece.name == '-' && !CastleThroughCheck(48, false))
+        {
+            return true;
+        }
+        return false;
+    }
+    private bool CastleThroughCheck(int _squareName, bool _isWhite)
+    {
+        Debug.Log("CastleThroughCheck");
+        //check all tiles
+        foreach (var tile in tiles)
+        {
+            Piece piece = tile.Value.piece;
+            if (piece.name != '-' && piece.isWhite != _isWhite && piece.legalMoves.Contains(_squareName))
+            {
+                Debug.Log("Cannot castle through check bc of " + piece.name + " on " + tile.Value.algebraicSquareName);
+                return true;
+            }
+        }
         return false;
     }
     private bool SquareBlocked(int startSquare, int endSquare)
@@ -372,12 +423,22 @@ public class ChessManager : MonoBehaviour
 
     }
 
-    public void AddMoveToNotation(int _startSquare, int _endSquare, bool _pieceTaken, bool _ambiguousMove) //processed after move
+    public void AddMoveToNotation(int _startSquare, int _endSquare, bool _pieceTaken, bool _ambiguousMove, int _castleType) //processed after move
     {
         string algebraicStartSquare = tiles[_startSquare].algebraicSquareName;
         string algebraicEndSquare = tiles[_endSquare].algebraicSquareName;
         string notationToAdd = "";
-
+        //castling
+        if(_castleType == 1) { 
+            notationToAdd = "O-O";
+            notation.Add(notationToAdd);
+            return;
+        }
+        else if(_castleType == 2) { 
+            notationToAdd = "O-O-O";
+            notation.Add(notationToAdd);
+            return;
+        }
         //piece name / pawn file
         if (char.ToUpper(tiles[_endSquare].piece.name) != 'P'){notationToAdd += char.ToUpper(tiles[_endSquare].piece.name).ToString(); }
         else if (_pieceTaken) { notationToAdd += tiles[_startSquare].algebraicSquareName[0].ToString(); }
@@ -390,6 +451,7 @@ public class ChessManager : MonoBehaviour
 
         //add to list
         notation.Add(notationToAdd);
+
     }
 
     public void AddToNotation(string _checkChar)
@@ -398,24 +460,35 @@ public class ChessManager : MonoBehaviour
     }
     public void UpdateNotationGrid()
     {
-        //Debug.Log(notation.Count);
-        //Debug.Log(notation.Count % 2);
-        //odd count notation, newest move is white
-        if (notation.Count % 2 == 1)
+        //update tempFEN and currFEN
+        if(isWhitesTurn)
         {
-            notationGrid.GetComponent<NotationGrid>().AddWhiteMove(notation[notation.Count - 1]);
+            tempFEN.currTurn = "w";
         }
         else
         {
-            notationGrid.GetComponent<NotationGrid>().AddBlackMove(notation[notation.Count - 1]);
+            tempFEN.currTurn = "b";
+            tempFEN.moves += 1;
+        }
+        tempFEN.UpdatePosition(tiles);
+        currFEN = tempFEN;
+
+        //odd count notation, newest move is white
+        if (notation.Count % 2 == 1)
+        {
+            notationGrid.GetComponent<NotationGrid>().AddWhiteMove(notation[notation.Count - 1], currFEN);
+        }
+        else
+        {
+            notationGrid.GetComponent<NotationGrid>().AddBlackMove(notation[notation.Count - 1], currFEN);
         }
     }
     //set FEN
     //integrate stockfish
     public void PrintCurrentFENPosition()
     {
-        Debug.Log("Current position FEN");
-        Debug.Log(PositionToFENPostion(tiles));
+        Debug.Log("Current FEN");
+        currFEN.PrintFEN();
     }
     public string PositionToFENPostion(Dictionary <int, Tile> _tiles)
     {

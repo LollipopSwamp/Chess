@@ -63,6 +63,7 @@ public class Tile : MonoBehaviour
         TextMeshProUGUI nameTMP = squareNameText.GetComponent<TextMeshProUGUI>();
         algebraicSquareName = NumericToAlgebraicNotation(squareName);
         nameTMP.text = squareName.ToString();
+        //nameTMP.text = algebraicSquareName;
         nameTMP.color = _isOffset ? Color.black : Color.white;
         squareNameCanvas.GetComponent<Canvas>().sortingLayerName = "Board";
         squareNameCanvas.transform.position = transform.position + _posOffset;

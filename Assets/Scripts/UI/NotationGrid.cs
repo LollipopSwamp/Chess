@@ -8,18 +8,18 @@ public class NotationGrid : MonoBehaviour
     [SerializeField] private GameObject notationMovePrefab;
     public List<GameObject> notationPanels = new List<GameObject>();
 
-    public void AddWhiteMove(string _move)
+    public void AddWhiteMove(string _move, FEN fen)
     {
         var newNotationPanel = Instantiate(notationMovePrefab, Vector3.zero, Quaternion.identity, this.transform);
         newNotationPanel.transform.parent = content.transform;
-        newNotationPanel.GetComponent<NotationMove>().SetWhiteMove(_move);
-        newNotationPanel.GetComponent<NotationMove>().SetBlackMove("");
+        newNotationPanel.GetComponent<NotationMove>().SetWhiteMove(_move, fen);
+        //newNotationPanel.GetComponent<NotationMove>().SetBlackMove("");
         ResizeScrollContent();
         notationPanels.Add(newNotationPanel);
     }
-    public void AddBlackMove(string _move)
+    public void AddBlackMove(string _move, FEN fen)
     {
-        notationPanels[notationPanels.Count - 1].GetComponent<NotationMove>().SetBlackMove(_move);
+        notationPanels[notationPanels.Count - 1].GetComponent<NotationMove>().SetBlackMove(_move, fen);
     }
     public void ResizeScrollContent()
     {
