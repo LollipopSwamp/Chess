@@ -487,7 +487,6 @@ public class ChessManager : MonoBehaviour
     //integrate stockfish
     public void PrintCurrentFENPosition()
     {
-        Debug.Log("Current FEN");
         currFEN.PrintFEN();
     }
     public string PositionToFENPostion(Dictionary <int, Tile> _tiles)

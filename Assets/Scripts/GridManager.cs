@@ -45,8 +45,6 @@ public class GridManager : MonoBehaviour
         Tile endSquare = chessManager.tiles[highlightedTile];
         char endSquarePiece = endSquare.piece.name;
 
-        Debug.Log("tiles[endSquare].algebraicSquareName " + endSquare.algebraicSquareName.ToString());
-        Debug.Log("currFEN.enPassant " + chessManager.currFEN.enPassant.ToString());
         //update tempFEN to previous move FEN
         chessManager.tempFEN = chessManager.currFEN;
 
@@ -154,8 +152,18 @@ public class GridManager : MonoBehaviour
             }
 
             //check enPassant
+            bool enPassant = false;
+            if (chessManager.currFEN.enPassant == endSquare.algebraicSquareName && endSquare.piece.name == 'P')//white did enPassant
+            {
+                chessManager.tiles[endSquare.squareName - 1].SetPiece('-');
+                pieceTaken = true;
+            }
+            else if(chessManager.currFEN.enPassant == endSquare.algebraicSquareName && endSquare.piece.name == 'p')//black did enPassant
+            {
+                chessManager.tiles[endSquare.squareName + 1].SetPiece('-');
+                pieceTaken = true;
+            }
             chessManager.tempFEN.enPassant = GetEnPassant(startSquare, endSquare);
-
 
             //add notation
             chessManager.AddMoveToNotation(startSquare.squareName, endSquare.squareName, pieceTaken, ambiguousMove, castleType);

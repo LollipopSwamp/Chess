@@ -64,7 +64,7 @@ public class Tile : MonoBehaviour
         algebraicSquareName = NumericToAlgebraicNotation(squareName);
         nameTMP.text = squareName.ToString();
         //nameTMP.text = algebraicSquareName;
-        nameTMP.color = _isOffset ? Color.black : Color.white;
+        //nameTMP.color = _isOffset ? Color.black : Color.white;
         squareNameCanvas.GetComponent<Canvas>().sortingLayerName = "Board";
         squareNameCanvas.transform.position = transform.position + _posOffset;
         piece = new Piece('-',squareName);
@@ -130,8 +130,8 @@ public class Tile : MonoBehaviour
         screenPoint = Camera.main.WorldToScreenPoint(gameObject.transform.position);
         offset = gameObject.transform.position - Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, screenPoint.z));
         var parentObject = this.transform.parent.gameObject;
-        Debug.Log("Legal Moves Count: " + piece.legalMoves.Count.ToString());
-        Debug.Log("Legal Moves: " + string.Join(", ", piece.legalMoves));
+        //Debug.Log("Legal Moves Count: " + piece.legalMoves.Count.ToString());
+        //Debug.Log("Legal Moves: " + string.Join(", ", piece.legalMoves));
         gridManager.HighlightLegalMoveTiles(piece.legalMoves);
         pieceSprite.GetComponent<Renderer>().sortingOrder = 1;
         //Debug.Log(this.name + " clicked");

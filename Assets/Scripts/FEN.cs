@@ -94,6 +94,6 @@ public class FEN
     }
     public void PrintFEN()
     {
-        Debug.Log(GetFEN());
+        Debug.Log("Current FEN: " + GetFEN());
     }
 }
