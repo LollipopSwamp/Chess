@@ -12,6 +12,9 @@ public class GridManager : MonoBehaviour
     public GameObject notationGrid;
     public int highlightedTile;
     public int clickedTile;
+    public GameObject setPositionMenu;
+    public int boardMode = 1; //0 = off, 1 = play, 2 = set position
+    public bool whiteOnBottom = true;
 
     void Start()
     {
@@ -26,6 +29,7 @@ public class GridManager : MonoBehaviour
             for (int y = 0; y < height; y++)
             {
                 var spawnedTile = Instantiate(tilePrefab, new Vector3(x, y), Quaternion.identity, this.transform);
+                Debug.Log(spawnedTile.transform.position);
                 string tileName  = (x+1).ToString() + (y+1).ToString();
                 bool useAlgebraicTileNames = true;
                 spawnedTile.name = tileName;
@@ -38,6 +42,30 @@ public class GridManager : MonoBehaviour
         }
         camera.transform.position = cameraPosition;
         chessManager.SetStartPosition();
+    }
+    public void FlipBoard()
+    {
+        whiteOnBottom = !whiteOnBottom;
+        Vector3 cameraPosition = new Vector3((float)width / 2 - 0.5f, (float)height / 2 - 0.5f, -7);
+        foreach (var tile in chessManager.tiles)
+        {
+            if (whiteOnBottom)
+            {
+                float x = Mathf.Floor(tile.Value.squareName / 10) - 1;
+                float y = (tile.Value.squareName % 10) - 1;
+                tile.Value.transform.position = new Vector3(x, y, 0);
+                Vector3 tileNamePos = camera.transform.InverseTransformDirection(tile.Value.transform.position - cameraPosition);
+                tile.Value.SetSquareNamePos(tileNamePos);
+            }
+            else
+            {
+                float x = 8 - Mathf.Floor(tile.Value.squareName / 10);
+                float y = 8 - (tile.Value.squareName % 10);
+                tile.Value.transform.position = new Vector3(x, y, 0);
+                Vector3 tileNamePos = camera.transform.InverseTransformDirection(tile.Value.transform.position - cameraPosition);
+                tile.Value.SetSquareNamePos(tileNamePos);
+            }
+        }
     }
     public void MovePiece()
     {
@@ -258,6 +286,14 @@ public class GridManager : MonoBehaviour
         {
             tile.Value.legalMoveHighlight.SetActive(false);
         }
+    }
+    public char GetSelectedPieceSetPos()
+    {
+        return setPositionMenu.GetComponent<SetPosition>().selectedPiece;
+    }
+    public void SaveCustomPosition()
+    {
+        Debug.Log("Custom position saved!");
     }
     public int AlgebraicToNumericNotation(string _algebraicNotation)
     {

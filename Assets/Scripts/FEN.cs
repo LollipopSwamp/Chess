@@ -15,7 +15,57 @@ public class FEN
     public int fiftyMoveRule = 0;
     public int moves = 0;
 
-    public FEN(){}
+    public FEN() { }
+    public FEN(string _fen) 
+    {
+        //position
+        int startIndex = 0;
+        int count = _fen.IndexOf(' ');
+        position = _fen.Substring(startIndex, count);
+        Debug.Log(position);
+
+        //currturn
+        startIndex = _fen.IndexOf(' ', startIndex) + 1;
+        count = _fen.IndexOf(' ', startIndex) - startIndex;
+        currTurn = _fen.Substring(startIndex, count);
+
+        //castling rights
+        startIndex = _fen.IndexOf(' ', startIndex) + 1;
+        count = _fen.IndexOf(' ', startIndex) - startIndex;
+        castlingRights = _fen.Substring(startIndex, count);
+
+        whiteKingsideCastling = false;
+        whiteQueensideCastling = false;
+        blackKingsideCastling = false;
+        blackQueensideCastling = false;
+        if (castlingRights.Contains('K')){
+            whiteKingsideCastling = true;
+        }
+        if (castlingRights.Contains('Q')){
+            whiteQueensideCastling = true;
+        }
+        if (castlingRights.Contains('k')){
+            blackKingsideCastling = true;
+        }
+        if (castlingRights.Contains('q')){
+            blackQueensideCastling = true;
+        }
+        //enPassant
+        startIndex = _fen.IndexOf(' ', startIndex) + 1;
+        count = _fen.IndexOf(' ', startIndex) - startIndex;
+        enPassant = _fen.Substring(startIndex, count);
+
+        //fifty move rule
+        startIndex = _fen.IndexOf(' ', startIndex) + 1;
+        count = _fen.IndexOf(' ', startIndex) - startIndex;
+        fiftyMoveRule = int.Parse(_fen.Substring(startIndex, count));
+
+        //moves
+        startIndex = _fen.IndexOf(' ', startIndex) + 1;
+        moves = int.Parse(_fen.Substring(startIndex));
+
+        PrintFEN();
+    }
 
     public void UpdatePosition(Dictionary<int, Tile> _tiles)
     {

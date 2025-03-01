@@ -71,6 +71,12 @@ public class Tile : MonoBehaviour
         //Debug.Log(squareNameCanvas.transform.position);
 
     }
+    public void SetSquareNamePos(Vector3 _posOffset)
+    {
+        Vector3 newPos = transform.position + _posOffset;
+        newPos = new Vector3(newPos.x, newPos.y, 2);
+        squareNameCanvas.transform.position = newPos;
+    }
     public string NumericToAlgebraicNotation(int _numericNotation)
     {
         string column;
@@ -126,30 +132,70 @@ public class Tile : MonoBehaviour
 
     void OnMouseDown()
     {
-        gridManager.clickedTile = int.Parse(this.name);
-        screenPoint = Camera.main.WorldToScreenPoint(gameObject.transform.position);
-        offset = gameObject.transform.position - Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, screenPoint.z));
-        var parentObject = this.transform.parent.gameObject;
-        //Debug.Log("Legal Moves Count: " + piece.legalMoves.Count.ToString());
-        //Debug.Log("Legal Moves: " + string.Join(", ", piece.legalMoves));
-        gridManager.HighlightLegalMoveTiles(piece.legalMoves);
-        pieceSprite.GetComponent<Renderer>().sortingOrder = 1;
-        //Debug.Log(this.name + " clicked");
+        switch (gridManager.boardMode)
+        {
+            case 0://board off
+                break;
+            case 1: // play game
+                gridManager.clickedTile = int.Parse(this.name);
+                screenPoint = Camera.main.WorldToScreenPoint(gameObject.transform.position);
+                offset = gameObject.transform.position - Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, screenPoint.z));
+                var parentObject = this.transform.parent.gameObject;
+                //Debug.Log("Legal Moves Count: " + piece.legalMoves.Count.ToString());
+                //Debug.Log("Legal Moves: " + string.Join(", ", piece.legalMoves));
+                gridManager.HighlightLegalMoveTiles(piece.legalMoves);
+                pieceSprite.GetComponent<Renderer>().sortingOrder = 1;
+                //Debug.Log(this.name + " clicked");
+                break;
+            case 2: // set position
+                if(piece.name == gridManager.GetSelectedPieceSetPos())
+                {
+                    SetPiece('-');
+                }
+                else
+                {
+                    SetPiece(gridManager.GetSelectedPieceSetPos());
+                }
+                break;
+            default:
+                break;
+        }
     }
     void OnMouseUp()
     {
-        gridManager.MovePiece();
-        pieceSprite.transform.position = transform.position;
-        gridManager.UnhighlightLegalMoveTiles();
-        pieceSprite.GetComponent<Renderer>().sortingOrder = 0;
-        //Debug.Log(this.name.ToString() + " " + piece.transform.position.ToString());
+        switch (gridManager.boardMode)
+        {
+            case 0://board off
+                break;
+            case 1: // play game
+                gridManager.MovePiece();
+                pieceSprite.transform.position = transform.position;
+                gridManager.UnhighlightLegalMoveTiles();
+                pieceSprite.GetComponent<Renderer>().sortingOrder = 0;
+                break;
+            case 2: // set position
+                break;
+            default:
+                break;
+        }
     }
     void OnMouseDrag()
     {
-        Vector3 curScreenPoint = new Vector3(Input.mousePosition.x, Input.mousePosition.y, screenPoint.z);
+        switch (gridManager.boardMode)
+        {
+            case 0://board off
+                break;
+            case 1: // play game
+                Vector3 curScreenPoint = new Vector3(Input.mousePosition.x, Input.mousePosition.y, screenPoint.z);
 
-        Vector3 curPosition = Camera.main.ScreenToWorldPoint(curScreenPoint) + offset;
-        pieceSprite.transform.position = curPosition;
+                Vector3 curPosition = Camera.main.ScreenToWorldPoint(curScreenPoint) + offset;
+                pieceSprite.transform.position = curPosition;
+                break;
+            case 2: // set position
+                break;
+            default:
+                break;
+        }
 
     }
 

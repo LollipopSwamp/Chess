@@ -18,6 +18,7 @@ public class ChessManager : MonoBehaviour
     public int moves = 0;
     public FEN currFEN = new FEN();
     public FEN tempFEN = new FEN();
+    public FEN customFEN = new FEN();
     public Dictionary<int, FEN> boardStates = new Dictionary<int, FEN>();
 
     //tiles variables
@@ -54,17 +55,25 @@ public class ChessManager : MonoBehaviour
     {
         //FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 2";
         //Debug.Log(position);
-        SetPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+        StartGame(new FEN());
         SetAllLegalMoves(tiles);
         //Debug.Log("White in Check: " + IsInCheck(true).ToString());
         //Debug.Log("Black in Check: " + IsInCheck(false).ToString());
         isWhitesTurn = true;
         FEN startFEN = new FEN();
     }
-    public void SetPosition(string _position)
+    public void SetCustomFEN(string _currTurn)
     {
+        customFEN = new FEN();
+        customFEN.position = PositionToFENPostion(tiles);
+        customFEN.currTurn = _currTurn;
+    }
+    public void StartGame(FEN _fen)
+{
+        if(_fen.currTurn == "w") { isWhitesTurn=true;}
+        else { isWhitesTurn=false;}
         int tileInt = 0;
-        foreach (char c in _position)
+        foreach (char c in _fen.position)
         {
             if (allPieceChars.Contains(c))
             {
@@ -79,6 +88,7 @@ public class ChessManager : MonoBehaviour
                 tileInt += int.Parse(c.ToString());
             }
         }
+        SetAllLegalMoves(tiles);
     }
     private int IntToTileNum(int _tileNum)
     {
