@@ -9,9 +9,11 @@ public class UIManager : MonoBehaviour
     public GameObject chessManager;
 
     //menu objects
+    public GameObject tooltip;
     public GameObject newGameMenu;
     public GameObject setPositionMenu;
     public GameObject newGameBtn;
+    public GameObject flipBoardBtn;
 
     void Start()
     {
@@ -22,6 +24,7 @@ public class UIManager : MonoBehaviour
         gridManager.GetComponent<GridManager>().boardMode = 1;
         HideAll();
         newGameBtn.SetActive(true);
+        flipBoardBtn.SetActive(true);
     }
     public void ShowNewGameMenu()
     {
@@ -34,12 +37,14 @@ public class UIManager : MonoBehaviour
         gridManager.GetComponent<GridManager>().boardMode = 2;
         HideAll();
         setPositionMenu.SetActive(true);
+        flipBoardBtn.SetActive(true);
     }
     public void HideAll()
     {
         newGameMenu.SetActive(false);
         setPositionMenu.SetActive(false);
         newGameBtn.SetActive(false);
+        flipBoardBtn.SetActive(false);
     }
     public void SaveCustomPosition(string _currTurn)
     {

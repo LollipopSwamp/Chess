@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 
 public class GridManager : MonoBehaviour
@@ -29,7 +30,7 @@ public class GridManager : MonoBehaviour
             for (int y = 0; y < height; y++)
             {
                 var spawnedTile = Instantiate(tilePrefab, new Vector3(x, y), Quaternion.identity, this.transform);
-                Debug.Log(spawnedTile.transform.position);
+                //UnityEngine.Debug.Log(spawnedTile.transform.position);
                 string tileName  = (x+1).ToString() + (y+1).ToString();
                 bool useAlgebraicTileNames = true;
                 spawnedTile.name = tileName;
@@ -67,24 +68,30 @@ public class GridManager : MonoBehaviour
             }
         }
     }
-    public void MovePiece()
+    public void PlayerMovePiece()
     {
-        Tile startSquare = chessManager.tiles[clickedTile];
-        Tile endSquare = chessManager.tiles[highlightedTile];
+        MovePiece(clickedTile, highlightedTile);
+        chessManager.MakeStockFishMove();
+    }
+    public void MovePiece(int _startSquare, int _endSquare)
+    {
+        Tile startSquare = chessManager.tiles[_startSquare];
+        Tile endSquare = chessManager.tiles[_endSquare];
         char endSquarePiece = endSquare.piece.name;
 
         //update tempFEN to previous move FEN
         chessManager.tempFEN = chessManager.currFEN;
 
         //check if its your turn
+        UnityEngine.Debug.Log("isWhitesTurn: " + chessManager.isWhitesTurn.ToString());
         if (chessManager.isWhitesTurn != startSquare.piece.isWhite)
         {
-            Debug.Log("Not your turn!");
+            UnityEngine.Debug.Log("Not your turn!");
             return;
         }
 
         //released on different square than clicked, move is legal
-        if (highlightedTile != clickedTile && chessManager.MoveIsLegal(clickedTile, highlightedTile))
+        if (_startSquare != _endSquare && chessManager.MoveIsLegal(_startSquare, _endSquare))
         {
             //check if move is ambiguous (before moving piece)
             bool ambiguousMove = false;
@@ -106,7 +113,7 @@ public class GridManager : MonoBehaviour
             }
             else
             {
-                Debug.Log("chessManager.tempFEN.fiftyMoveRule += 1");
+                UnityEngine.Debug.Log("chessManager.tempFEN.fiftyMoveRule += 1");
                 chessManager.tempFEN.fiftyMoveRule += 1;
             }
             //move piece
@@ -131,7 +138,7 @@ public class GridManager : MonoBehaviour
             chessManager.tiles = chessManager.SetAllLegalMoves(chessManager.tiles);
             if (chessManager.IsInCheck(chessManager.isWhitesTurn))
             {
-                Debug.Log("Move illegal, puts you in check!");
+                UnityEngine.Debug.Log("Move illegal, puts you in check!");
                 startSquare.SetPiece(endSquare.piece.name);
                 endSquare.SetPiece(endSquarePiece);
                 chessManager.tempFEN = chessManager.currFEN;
@@ -218,7 +225,7 @@ public class GridManager : MonoBehaviour
         }
         else 
         {
-            Debug.Log("Move illegal");
+            UnityEngine.Debug.Log("Move illegal");
             return;
         }
         chessManager.tiles = chessManager.SetAllLegalMoves(chessManager.tiles);
@@ -227,8 +234,8 @@ public class GridManager : MonoBehaviour
     }
     private string GetEnPassant(Tile startSquare, Tile endSquare) //processed after move
     {
-        //Debug.Log(startSquare.squareName);
-        //Debug.Log(endSquare.squareName);
+        //UnityEngine.Debug.Log(startSquare.squareName);
+        //UnityEngine.Debug.Log(endSquare.squareName);
         string enPassant = "-";
         //not pawn movement
         if (endSquare.piece.name != 'P' &&  endSquare.piece.name != 'p') { return "-"; }
@@ -293,7 +300,7 @@ public class GridManager : MonoBehaviour
     }
     public void SaveCustomPosition()
     {
-        Debug.Log("Custom position saved!");
+        UnityEngine.Debug.Log("Custom position saved!");
     }
     public int AlgebraicToNumericNotation(string _algebraicNotation)
     {

@@ -68,7 +68,7 @@ public class Tile : MonoBehaviour
         squareNameCanvas.GetComponent<Canvas>().sortingLayerName = "Board";
         squareNameCanvas.transform.position = transform.position + _posOffset;
         piece = new Piece('-',squareName);
-        //Debug.Log(squareNameCanvas.transform.position);
+        //UnityEngine.Debug.Log(squareNameCanvas.transform.position);
 
     }
     public void SetSquareNamePos(Vector3 _posOffset)
@@ -121,7 +121,7 @@ public class Tile : MonoBehaviour
     void OnMouseEnter()
     {
         gridManager.highlightedTile = int.Parse(this.name);
-        //Debug.Log(this.name);
+        //UnityEngine.Debug.Log(this.name);
         highlight.SetActive(true);
     }
 
@@ -141,11 +141,11 @@ public class Tile : MonoBehaviour
                 screenPoint = Camera.main.WorldToScreenPoint(gameObject.transform.position);
                 offset = gameObject.transform.position - Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, screenPoint.z));
                 var parentObject = this.transform.parent.gameObject;
-                //Debug.Log("Legal Moves Count: " + piece.legalMoves.Count.ToString());
-                //Debug.Log("Legal Moves: " + string.Join(", ", piece.legalMoves));
+                //UnityEngine.Debug.Log("Legal Moves Count: " + piece.legalMoves.Count.ToString());
+                //UnityEngine.Debug.Log("Legal Moves: " + string.Join(", ", piece.legalMoves));
                 gridManager.HighlightLegalMoveTiles(piece.legalMoves);
                 pieceSprite.GetComponent<Renderer>().sortingOrder = 1;
-                //Debug.Log(this.name + " clicked");
+                //UnityEngine.Debug.Log(this.name + " clicked");
                 break;
             case 2: // set position
                 if(piece.name == gridManager.GetSelectedPieceSetPos())
@@ -168,7 +168,7 @@ public class Tile : MonoBehaviour
             case 0://board off
                 break;
             case 1: // play game
-                gridManager.MovePiece();
+                gridManager.PlayerMovePiece();
                 pieceSprite.transform.position = transform.position;
                 gridManager.UnhighlightLegalMoveTiles();
                 pieceSprite.GetComponent<Renderer>().sortingOrder = 0;
@@ -206,12 +206,12 @@ public class Tile : MonoBehaviour
     }
     public void PrintTile()
     {
-        Debug.Log("== Print Tile ==");
-        Debug.Log("Square Name Int: " + squareName.ToString());
-        Debug.Log("Algebraic Square Name: " + algebraicSquareName.ToString());
-        Debug.Log("Piece Name: " + piece.name.ToString());
-        Debug.Log("Legal Moves Count: " + piece.legalMoves.Count.ToString());
-        Debug.Log("Legal Moves: " + string.Join(", ", piece.legalMoves));
+        UnityEngine.Debug.Log("== Print Tile ==");
+        UnityEngine.Debug.Log("Square Name Int: " + squareName.ToString());
+        UnityEngine.Debug.Log("Algebraic Square Name: " + algebraicSquareName.ToString());
+        UnityEngine.Debug.Log("Piece Name: " + piece.name.ToString());
+        UnityEngine.Debug.Log("Legal Moves Count: " + piece.legalMoves.Count.ToString());
+        UnityEngine.Debug.Log("Legal Moves: " + string.Join(", ", piece.legalMoves));
 
     }
 }

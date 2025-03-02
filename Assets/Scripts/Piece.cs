@@ -19,10 +19,10 @@ public class Piece
     }
     public void PrintPiece()
     {
-        Debug.Log("Piece Name: " + name.ToString());
-        Debug.Log("Is White: " + isWhite.ToString());
-        Debug.Log("Square: " + square.ToString());
-        Debug.Log("Legal Moves Count: " + legalMoves.Count.ToString());
-        Debug.Log("Legal Moves: " + string.Join(", ", legalMoves));
+        UnityEngine.Debug.Log("Piece Name: " + name.ToString());
+        UnityEngine.Debug.Log("Is White: " + isWhite.ToString());
+        UnityEngine.Debug.Log("Square: " + square.ToString());
+        UnityEngine.Debug.Log("Legal Moves Count: " + legalMoves.Count.ToString());
+        UnityEngine.Debug.Log("Legal Moves: " + string.Join(", ", legalMoves));
     }
 }

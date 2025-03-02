@@ -22,7 +22,7 @@ public class FEN
         int startIndex = 0;
         int count = _fen.IndexOf(' ');
         position = _fen.Substring(startIndex, count);
-        Debug.Log(position);
+        UnityEngine.Debug.Log(position);
 
         //currturn
         startIndex = _fen.IndexOf(' ', startIndex) + 1;
@@ -144,6 +144,6 @@ public class FEN
     }
     public void PrintFEN()
     {
-        Debug.Log("Current FEN: " + GetFEN());
+        UnityEngine.Debug.Log("Current FEN: " + GetFEN());
     }
 }

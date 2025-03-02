@@ -1,13 +1,21 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
+using System.Threading;
 //using System.Diagnostics;
 
 public class ChessManager : MonoBehaviour
 {
-    //gameobjects
-    //public GameObject gridManagerObj;
-    //public GridManager gridManager;
+    //stockfish
+    public GameObject stockfishObject;
+    private StockFishApi stockfish;
+    public bool waitingForStockfish = false;
+
+    //gameobejct refs
+    public GameObject gridManagerObject;
+    private GridManager gridManager;
 
     //FEN variables
     public string position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
@@ -39,8 +47,32 @@ public class ChessManager : MonoBehaviour
     void Start()
     {
         //gridManager = gridManagerObj.GetComponent<GridManager>();
+        //StockfishTest();
+        stockfish = stockfishObject.GetComponent<StockFishApi>();
+        gridManager = gridManagerObject.GetComponent<GridManager>();
     }
-
+    void Update()
+    {
+        if (!waitingForStockfish) { return; }
+        else if(stockfish.bestMoveUpdated)
+        {
+            string bestMove = stockfish.bestMove;
+            int startSquare = gridManager.AlgebraicToNumericNotation(bestMove.Substring(0, 2));
+            int endSquare = gridManager.AlgebraicToNumericNotation(bestMove.Substring(2));
+            UnityEngine.Debug.Log("Making Best Move || startSquare: " + startSquare.ToString() + " || endSquare: " + endSquare.ToString());
+            gridManager.MovePiece(startSquare, endSquare);
+            waitingForStockfish = false;
+        }
+    }
+    public void MakeStockFishMove()
+    {
+        stockfish.bestMoveUpdated = false;
+        waitingForStockfish = true;
+        stockfish.FENInput = currFEN.GetFEN();
+        stockfish.DepthInput = "25";
+        //stockfish.SetRating(500);
+        stockfish.GetMove();
+    }
     public void ResetGame()
     {
         foreach (var tile in tiles.Values)
@@ -54,11 +86,11 @@ public class ChessManager : MonoBehaviour
     public void SetStartPosition()
     {
         //FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 2";
-        //Debug.Log(position);
+        //UnityEngine.Debug.Log(position);
         StartGame(new FEN());
         SetAllLegalMoves(tiles);
-        //Debug.Log("White in Check: " + IsInCheck(true).ToString());
-        //Debug.Log("Black in Check: " + IsInCheck(false).ToString());
+        //UnityEngine.Debug.Log("White in Check: " + IsInCheck(true).ToString());
+        //UnityEngine.Debug.Log("Black in Check: " + IsInCheck(false).ToString());
         isWhitesTurn = true;
         FEN startFEN = new FEN();
     }
@@ -102,7 +134,7 @@ public class ChessManager : MonoBehaviour
     }
     public void SetTilesAfterMove(int startSquare, int endSquare)
     {
-        Debug.Log("SetTilesAfterMove");
+        UnityEngine.Debug.Log("SetTilesAfterMove");
         //create board after move
         //tilesAfterMove = new Dictionary<int, Tile>();
         tilesAfterMove = new Dictionary<int, Tile>();
@@ -112,22 +144,22 @@ public class ChessManager : MonoBehaviour
             newTile.piece = new Piece(tile.Value.piece.name, tile.Value.squareName);
             tilesAfterMove.Add(tile.Key,  newTile);
         }
-        //Debug.Log(tiles[startSquare].piece.name);
+        //UnityEngine.Debug.Log(tiles[startSquare].piece.name);
         tilesAfterMove[endSquare].piece.name = tilesAfterMove[startSquare].piece.name;
         tilesAfterMove[startSquare].piece.name = '-';
-        //Debug.Log(tiles[startSquare].piece.name);
+        //UnityEngine.Debug.Log(tiles[startSquare].piece.name);
         tilesAfterMove = SetAllLegalMoves(tilesAfterMove);
         tilesAfterMove[61].piece.PrintPiece();
-        Debug.Log(PositionToFENPostion(tilesAfterMove));
+        UnityEngine.Debug.Log(PositionToFENPostion(tilesAfterMove));
     }
     public bool MoveIsLegal(int _startSquareName, int _endSquareName)
     {
         Tile startSquare = tiles[_startSquareName].GetComponent<Tile>();
         Tile endSquare = tiles[_endSquareName].GetComponent<Tile>();
         //check if own piece is on square
-        //Debug.Log("startSquare");
+        //UnityEngine.Debug.Log("startSquare");
         //startSquare.piece.PrintPiece();
-        //Debug.Log("endSquare: " + _endSquareName.ToString());
+        //UnityEngine.Debug.Log("endSquare: " + _endSquareName.ToString());
         //endSquare.piece.PrintPiece();
         if (startSquare.piece.isWhite == endSquare.piece.isWhite && endSquare.piece.name != '-') { return false; }
 
@@ -160,7 +192,7 @@ public class ChessManager : MonoBehaviour
     }
     public bool IsInCheckAfterMove(bool isWhite)
     {
-        Debug.Log("IsInCheckAfterMove");
+        UnityEngine.Debug.Log("IsInCheckAfterMove");
         //check all tiles
         foreach (var tile in tilesAfterMove)
         {
@@ -170,15 +202,15 @@ public class ChessManager : MonoBehaviour
             //if checking white, piece is opposite color, and piece contains kingLoc in legal moves
             else if (isWhite && piece.isWhite != isWhite && piece.legalMoves.Contains(whiteKingLoc))
             {
-                Debug.Log(tile.Value.squareName);
-                Debug.Log(true);
+                UnityEngine.Debug.Log(tile.Value.squareName);
+                UnityEngine.Debug.Log(true);
                 return true;
             }
             //if checking black, piece is opposite color, and piece contains kingLoc in legal moves
             else if (!isWhite && piece.isWhite != isWhite && piece.legalMoves.Contains(blackKingLoc))
             {
-                Debug.Log(tile.Value.squareName);
-                Debug.Log(true);
+                UnityEngine.Debug.Log(tile.Value.squareName);
+                UnityEngine.Debug.Log(true);
                 return true;
             }
         }
@@ -247,7 +279,7 @@ public class ChessManager : MonoBehaviour
         int squareToCheck = startSquare + (squareBlockDiff * positiveNegative);
         while (squareToCheck != endSquare)
         {
-            //Debug.Log("Checking if " + squareToCheck.ToString() + " is blocked");
+            //UnityEngine.Debug.Log("Checking if " + squareToCheck.ToString() + " is blocked");
             if (tiles[squareToCheck].GetComponent<Tile>().piece.name != '-') { return false; }
             squareToCheck += squareBlockDiff * positiveNegative;
         }
@@ -277,7 +309,7 @@ public class ChessManager : MonoBehaviour
         int squareToCheck = startSquare + (squareBlockDiff * positiveNegative);
         while (squareToCheck != endSquare)
         {
-            //Debug.Log("Checking if " + squareToCheck.ToString() + " is blocked (11)");
+            //UnityEngine.Debug.Log("Checking if " + squareToCheck.ToString() + " is blocked (11)");
             if (tiles[squareToCheck].GetComponent<Tile>().piece.name != '-') { return false; }
             squareToCheck += squareBlockDiff * positiveNegative;
         }
@@ -316,14 +348,14 @@ public class ChessManager : MonoBehaviour
     }
     private bool CastleThroughCheck(int _squareName, bool _isWhite)
     {
-        Debug.Log("CastleThroughCheck");
+        UnityEngine.Debug.Log("CastleThroughCheck");
         //check all tiles
         foreach (var tile in tiles)
         {
             Piece piece = tile.Value.piece;
             if (piece.name != '-' && piece.isWhite != _isWhite && piece.legalMoves.Contains(_squareName))
             {
-                Debug.Log("Cannot castle through check bc of " + piece.name + " on " + tile.Value.algebraicSquareName);
+                UnityEngine.Debug.Log("Cannot castle through check bc of " + piece.name + " on " + tile.Value.algebraicSquareName);
                 return true;
             }
         }
@@ -337,20 +369,20 @@ public class ChessManager : MonoBehaviour
     public bool IsInCheck(bool isWhite)
     {
         int color = isWhite ? 0 : 1;
-        //Debug.Log("whiteKingLoc:" + whiteKingLoc.ToString());
-        //Debug.Log("blackKingLoc:" + blackKingLoc.ToString());
+        //UnityEngine.Debug.Log("whiteKingLoc:" + whiteKingLoc.ToString());
+        //UnityEngine.Debug.Log("blackKingLoc:" + blackKingLoc.ToString());
         foreach (var tile in tiles)
         {
             Piece piece = tile.Value.piece;
             if (tile.Value.piece.name == '-') { continue; }
             else if (isWhite && piece.isWhite != isWhite && piece.legalMoves.Contains(whiteKingLoc))
             {
-                //Debug.Log("White in check from " + tile.Value.squareName.ToString());
+                //UnityEngine.Debug.Log("White in check from " + tile.Value.squareName.ToString());
                 return true;
             }
             else if (!isWhite && piece.isWhite != isWhite && piece.legalMoves.Contains(blackKingLoc))
             {
-                //Debug.Log("Black in check from " + tile.Value.squareName.ToString());
+                //UnityEngine.Debug.Log("Black in check from " + tile.Value.squareName.ToString());
                 return true;
             }
         }
@@ -366,13 +398,13 @@ public class ChessManager : MonoBehaviour
             {
                 foreach(KeyValuePair<int, Tile> endSquare in _tiles)
                 {
-                    //Debug.Log("Checking Legal Move: " + startSquare.Value.squareName.ToString() + " " + endSquare.Value.squareName.ToString());
+                    //UnityEngine.Debug.Log("Checking Legal Move: " + startSquare.Value.squareName.ToString() + " " + endSquare.Value.squareName.ToString());
                     if (MoveIsLegal(startSquare.Value.squareName, endSquare.Value.squareName))
                     {
-                        //Debug.Log("Legal move");
+                        //UnityEngine.Debug.Log("Legal move");
                         startSquare.Value.piece.legalMoves.Add(endSquare.Value.squareName);
                     }
-                    //else { Debug.Log("Illegal Move: " + startSquare.Value.squareName.ToString() + " " + endSquare.Value.squareName.ToString()); }
+                    //else { UnityEngine.Debug.Log("Illegal Move: " + startSquare.Value.squareName.ToString() + " " + endSquare.Value.squareName.ToString()); }
                 }
             }
         }
@@ -412,7 +444,7 @@ public class ChessManager : MonoBehaviour
                     //if move removes check
                     if (!IsInCheck(!isWhitesTurn))
                     {
-                        Debug.Log(tile.Value.squareName.ToString() + " to " + legalMove.ToString() + " removes check. Not checkmate.");
+                        UnityEngine.Debug.Log(tile.Value.squareName.ToString() + " to " + legalMove.ToString() + " removes check. Not checkmate.");
                         checkmate = false;
                     }
                     //undo move
@@ -425,7 +457,7 @@ public class ChessManager : MonoBehaviour
                 }
             }
         }
-        Debug.Log("Checkmate!!");
+        UnityEngine.Debug.Log("Checkmate!!");
         return checkmate;
     }
     public void GameEnded(bool _whiteIsWinner)
